@@ -1,25 +1,72 @@
 import pygame
 import random
 import math
+import sys
+sys.path.append('..')
+
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load('./assets/enemyBlue2.png')
         self.image = pygame.transform.scale(self.image, (40, 40))
         self.rect = self.image.get_rect()
-        #self.x = x
-        #self.y = y
+        self.x = x
+        self.y = y
+        self.rect.x = self.x
+        self.rect.y = self.y
 
-    #def draw(self, screen):
-        #screen.blit(self.image, self.rect)
+    def move_right(self):
+        self.rect.x += 1
 
-    #def move_left(self):
-        #self.x += -1
+    def move_left(self):
+        self.rect.x -= 1
 
-    #def move_right(self):
-        #self.x += 1
+    def update(self, time_counter):
+
+        if time_counter < 400:
+            self.move_right()
+        if time_counter > 400:
+            self.move_left()
+
+
+
+
+
+class Bullet(pygame.sprite.Sprite):
+
+    def __init__(self, x, y, direction):
+
+        super().__init__()
+        self.images = [0, 0]
+        self.images[0] = pygame.image.load('./assets/laserRed02.png')
+        self.images[1] = pygame.image.load('./assets/laserBlue02.png')
+        self.x = x + 24
+        self.y = y + 10
+        #direction will be 0 = up, 1 = down
+        self.direction = direction
+
+        self.image = self.images[direction]
+        self.rect = self.image.get_rect()
+        self.rect.x = self.x
+        self.rect.y = self.y
+        self.y_change = 10
+
+    def update(self, game, ships):
+
+        if self.direction == 0:
+            self.rect.y -= self.y_change
+            #if self.rect.y <= 0:
+                 #game.bullets.remove(self)
+        if self.direction == 1:
+            self.rect.y += self.y_change
+            #if self.rect.y >= 600:
+                #game.bullets.remove(self)
+        hit_object = pygame.sprite.spritecollideany(self, ships)
+        if hit_object:
+            hit_object.kill()
+            game.score += 10
 
 
 class Game:
@@ -34,67 +81,59 @@ class Game:
         #Player related
         self.playerImg = pygame.image.load('./assets/playerShip1_red.png')
         self.playerImg = pygame.transform.scale(self.playerImg, (64, 64))
-        self.playerBullet = pygame.image.load('./assets/laserRed02.png')
         self.pX = 350
         self.pY = 500
         self.pXchange = 0
         self.player_bulletX = 0
-        self.player_bulletY = self.pY
-        self.player_bullet_ychange = 10
-        self.bulletState = "go"
         self.score = 0
 
         #Enemy related
-        self.enemyBullet = pygame.image.load('./assets/laserBlue02.png')
-        self.eX = [160, 220, 280, 340, 400, 460, 520, 200, 270, 340, 410, 480, 260, 340, 420]
+        self.eX = [0, 60, 120, 180, 240, 300, 360, 30, 100, 170, 240, 310, 60, 160, 260]
         self.eY = [100, 100, 100, 100, 100, 100, 100, 150, 150, 150, 150, 150, 200, 200, 200]
-        self.eXchange = 0
-        self.enemy_bulletX = 0
-        self.enemy_bulletY = 0
-        self.enemy_bullet_ychange = 0
 
         self.clock = pygame.time.Clock()
+    
 
 
 
     def player(self, x, y):
         self.scr.blit(self.playerImg, (x, y))
 
-    def playerShoot(self, x, y):
-        self.bulletState = "moving"
-        self.scr.blit(self.playerBullet, (x + 24, y + 10))
 
-    def collisionDetection(self, ex, ey, bx, by):
-        distance = math.sqrt((math.pow(ex - bx, 2)) + (math.pow(ey - by, 2)))
-        if distance < 30:
-            return True
-        return False
-
-def main():
+def main():    
+    # create event for enemy shooting
+    shoot_event = pygame.USEREVENT + 1
+    pygame.time.set_timer(shoot_event, 500)
     # Game Loop
     ships = pygame.sprite.Group()
+    bullets = pygame.sprite.Group()
+    #create enemies
     g = Game()
     for i in range(0, 15):
-        e = Enemy()
-        e.rect.x = g.eX[i]
-        e.rect.y = g.eY[i]
+        e = Enemy(g.eX[i], g.eY[i])
+        #e.rect.x = g.eX[i]
+        #e.rect.y = g.eY[i]
         ships.add(e)
     run = True
+    time_counter = 0
+    
     while run:
         g.scr.fill((0, 0, 0))
         #check events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+            if event.type == shoot_event:
+                pick_enemy = random.randint(0, 15)
+                bullet = Bullet()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     g.pXchange = -8
                 if event.key == pygame.K_RIGHT:
                     g.pXchange = 8
                 if event.key == pygame.K_SPACE:
-                    if g.bulletState == "go":
-                        g.playerShoot(g.pX, g.player_bulletY)
-                        g.player_bulletX = g.pX
+                    bullet = Bullet(g.pX, g.pY, 0)
+                    bullets.add(bullet)
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                     g.pXchange = 0
@@ -107,30 +146,17 @@ def main():
             g.pX = 700
         #move enemy back and forth
 
-        #move player bullet
-        if g.player_bulletY <= 0:
-            g.player_bulletY = 500
-            g.bulletState = "go"
-
-        if g.bulletState == "moving":
-            g.playerShoot(g.player_bulletX, g.player_bulletY)
-            g.player_bulletY -= g.player_bullet_ychange
-
-        #Collision
-        for i in range(0, 15):
-            collision = g.collisionDetection(ships.sprites()[i].rect.x, ships.sprites()[i].rect.y, g.player_bulletX, g.player_bulletY)
-            if collision:
-                g.player_bulletY = 500
-                g.bulletState = "go"
-                g.score += 10
-                ships.remove(ships.sprites()[i])
-
         #draw
+        time_counter += 1
         g.player(g.pX, g.pY)
-        ships.update()
+        ships.update(time_counter)
         ships.draw(g.scr)
+        bullets.update(g, ships)
+        bullets.draw(g.scr)
         pygame.display.update()
         g.clock.tick(60)
+        if time_counter >= 800:
+            time_counter = 0
 
 
 if __name__ == '__main__':

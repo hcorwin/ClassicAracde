@@ -1,6 +1,5 @@
 import pygame
 import random
-import math
 import sys
 sys.path.append('..')
 
@@ -58,9 +57,10 @@ class Bullet(pygame.sprite.Sprite):
         self.images = [0, 0]
         self.images[0] = pygame.image.load('./assets/laserRed02.png')
         self.images[1] = pygame.image.load('./assets/laserBlue02.png')
+        #self.images[2] = pygame.image.load('./assets/laserBlue02.png')
         self.x = x + 24
         self.y = y + 10
-        #direction will be 0 = up, 1 = down
+        # direction will be 0 = up, 1 = down
         self.direction = direction
 
         self.image = self.images[direction]
@@ -82,7 +82,7 @@ class Bullet(pygame.sprite.Sprite):
                 game.score += 10
         if self.direction == 1:
             self.rect.y += 5
-            #if self.rect.y >= 600:
+            #f self.rect.y >= 600:
                 #game.e_bullets.remove(self)
             hit_object = pygame.sprite.spritecollideany(self, ships)
             if hit_object:
@@ -92,6 +92,8 @@ class Bullet(pygame.sprite.Sprite):
                     self.last_hit = now
                 if game.live <= 0:
                     hit_object.kill()
+        if self.direction == 2:
+            pass
 
 
 class Player(pygame.sprite.Sprite):
@@ -116,15 +118,15 @@ class Game:
     def __init__(self):
         pygame.init()
 
-        #set screen
+        # set screen
         self.scr = pygame.display.set_mode((800, 600))
         pygame.display.set_caption("Arcade Game")
 
-        #Player related
+        # Player related
         self.score = 0
         self.live = 3
 
-        #Enemy related
+        # Enemy related
         self.eX = [0, 60, 120, 180, 240, 300, 360, 30, 100, 170, 240, 310, 60, 160, 260]
         self.eY = [100, 100, 100, 100, 100, 100, 100, 150, 150, 150, 150, 150, 200, 200, 200]
 
@@ -145,16 +147,16 @@ def main():
     # Game Loop
     ships = pygame.sprite.Group()
     bullets = pygame.sprite.Group()
-    #bullets.add(Bullet(100, 100, 0))
+    #bullets.add(Bullet(100, 100, 2))
     e_bullets = pygame.sprite.Group()
-    #e_bullets.add(Bullet(100, 100, 1))
+    #e_bullets.add(Bullet(100, 100, 2))
     players = pygame.sprite.Group()
     p = Player(350, 480)
     players.add(p)
     pressed_left = False
     pressed_right = False
     overlay = Overlay()
-    #create enemies
+    # create enemies
     for i in range(0, 15):
         e = Enemy(g.eX[i], g.eY[i])
         ships.add(e)
@@ -163,7 +165,7 @@ def main():
 
     while run:
         g.scr.fill((0, 0, 0))
-        #check events
+        # check events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -191,8 +193,7 @@ def main():
                 if event.key == pygame.K_RIGHT:
                     pressed_right = False
 
-
-        #move player based on changed values within boundaries of map
+        # move player based on changed values within boundaries of map
         if pressed_left:
             p.move_left()
         if pressed_right:
@@ -202,24 +203,22 @@ def main():
         elif p.rect.x >= 700:
             p.rect.x = 700
 
-        #draw
+        #update
         time_counter += 1
         players.update()
         overlay.update(g.score, g.live)
         bullets.update(g, ships)
         e_bullets.update(g, players)
-
         ships.update(time_counter)
-
+        #draw
         players.draw(g.scr)
         ships.draw(g.scr)
         bullets.draw(g.scr)
         e_bullets.draw(g.scr)
         overlay.draw(g.scr)
-
+        #check for game over
         if g.live == 0 or not ships:
             g.game_over_text()
-
 
         pygame.display.update()
         g.clock.tick(60)

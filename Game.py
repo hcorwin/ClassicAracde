@@ -69,6 +69,24 @@ class Bullet(pygame.sprite.Sprite):
             game.score += 10
 
 
+class Player(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load('./assets/playerShip1_red.png')
+        self.image = pygame.transform.scale(self.image, (64, 64))
+        self.rect = self.image.get_rect()
+        self.x = x
+        self.y = y
+        self.rect.x = self.x
+        self.rect.y = self.y
+
+    def move_left(self):
+        self.rect.x -= 8
+
+    def move_right(self):
+        self.rect.x += 8
+
+
 class Game:
     def __init__(self):
         pygame.init()
@@ -79,12 +97,6 @@ class Game:
         pygame.display.set_caption("Arcade Game")
 
         #Player related
-        self.playerImg = pygame.image.load('./assets/playerShip1_red.png')
-        self.playerImg = pygame.transform.scale(self.playerImg, (64, 64))
-        self.pX = 350
-        self.pY = 500
-        self.pXchange = 0
-        self.player_bulletX = 0
         self.score = 0
 
         #Enemy related
@@ -92,31 +104,34 @@ class Game:
         self.eY = [100, 100, 100, 100, 100, 100, 100, 150, 150, 150, 150, 150, 200, 200, 200]
 
         self.clock = pygame.time.Clock()
-    
 
 
 
-    def player(self, x, y):
-        self.scr.blit(self.playerImg, (x, y))
+
+   # def player(self, x, y):
+     #   self.scr.blit(self.playerImg, (x, y))
 
 
-def main():    
+def main():
     # create event for enemy shooting
     shoot_event = pygame.USEREVENT + 1
     pygame.time.set_timer(shoot_event, 500)
     # Game Loop
     ships = pygame.sprite.Group()
     bullets = pygame.sprite.Group()
+    players = pygame.sprite.Group()
+    p = Player(350, 480)
+    players.add(p)
+    pressed_left = False
+    pressed_right = False
     #create enemies
     g = Game()
     for i in range(0, 15):
         e = Enemy(g.eX[i], g.eY[i])
-        #e.rect.x = g.eX[i]
-        #e.rect.y = g.eY[i]
         ships.add(e)
     run = True
     time_counter = 0
-    
+
     while run:
         g.scr.fill((0, 0, 0))
         #check events
@@ -125,30 +140,37 @@ def main():
                 run = False
             if event.type == shoot_event:
                 pick_enemy = random.randint(0, 15)
-                bullet = Bullet()
+                #bullet = Bullet(ships.sprites()[14].rect.x, ships.sprites()[14].rect.y, 1)
+                #bullets.add(bullet)
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    g.pXchange = -8
+                    pressed_left = True
                 if event.key == pygame.K_RIGHT:
-                    g.pXchange = 8
+                    pressed_right = True
                 if event.key == pygame.K_SPACE:
-                    bullet = Bullet(g.pX, g.pY, 0)
+                    bullet = Bullet(p.rect.x, p.rect.y, 0)
                     bullets.add(bullet)
+                    pass
             if event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                    g.pXchange = 0
+                if event.key == pygame.K_LEFT:
+                    pressed_left = False
+                if event.key == pygame.K_RIGHT:
+                    pressed_right = False
 
         #move player based on changed values within boundaries of map
-        g.pX += g.pXchange
-        if g.pX <= 0:
-            g.pX = 0
-        elif g.pX >= 700:
-            g.pX = 700
-        #move enemy back and forth
+        if pressed_left:
+            p.move_left()
+        if pressed_right:
+            p.move_right()
+        if p.rect.x <= 0:
+            p.rect.x = 0
+        elif p.rect.x >= 700:
+            p.rect.x = 700
 
         #draw
         time_counter += 1
-        g.player(g.pX, g.pY)
+        players.update()
+        players.draw(g.scr)
         ships.update(time_counter)
         ships.draw(g.scr)
         bullets.update(g, ships)

@@ -68,6 +68,7 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.x = self.x
         self.rect.y = self.y
         self.y_change = 10
+        self.last_hit = pygame.time.get_ticks()
 
     def update(self, game, ships):
 
@@ -85,8 +86,11 @@ class Bullet(pygame.sprite.Sprite):
                 #game.e_bullets.remove(self)
             hit_object = pygame.sprite.spritecollideany(self, ships)
             if hit_object:
-                game.live -= 1
-                if game.live == 0:
+                now = pygame.time.get_ticks()
+                if now - self.last_hit > 400:
+                    game.live -= 1
+                    self.last_hit = now
+                if game.live <= 0:
                     hit_object.kill()
 
 
@@ -124,7 +128,13 @@ class Game:
         self.eX = [0, 60, 120, 180, 240, 300, 360, 30, 100, 170, 240, 310, 60, 160, 260]
         self.eY = [100, 100, 100, 100, 100, 100, 100, 150, 150, 150, 150, 150, 200, 200, 200]
 
+        self.game_over_font = pygame.font.Font('freesansbold.ttf', 64)
+
         self.clock = pygame.time.Clock()
+
+    def game_over_text(self):
+        self. over_text = self.game_over_font.render("GAME OVER", True, (255, 255, 255))
+        self.scr.blit(self.over_text, (200, 250))
 
 
 def main():
@@ -172,8 +182,9 @@ def main():
                 if event.key == pygame.K_RIGHT:
                     pressed_right = True
                 if event.key == pygame.K_SPACE:
-                    bullet = Bullet(p.rect.x, p.rect.y, 0)
-                    bullets.add(bullet)
+                    if g.live > 0:
+                        bullet = Bullet(p.rect.x, p.rect.y, 0)
+                        bullets.add(bullet)
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
                     pressed_left = False
@@ -205,6 +216,10 @@ def main():
         bullets.draw(g.scr)
         e_bullets.draw(g.scr)
         overlay.draw(g.scr)
+
+        if g.live == 0 or not ships:
+            g.game_over_text()
+
 
         pygame.display.update()
         g.clock.tick(60)

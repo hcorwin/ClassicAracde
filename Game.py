@@ -74,22 +74,20 @@ class Bullet(pygame.sprite.Sprite):
 
         if self.direction == 0:
             self.rect.y -= self.y_change
-            #if self.rect.y <= 0:
-                 #game.bullets.remove(self)
             hit_object = pygame.sprite.spritecollideany(self, ships)
             if hit_object:
                 hit_object.kill()
+                game.bullets.remove(self)
                 game.score += 10
         if self.direction == 1:
-            self.rect.y += 5
-            #f self.rect.y >= 600:
-                #game.e_bullets.remove(self)
+            self.rect.y += 9
             hit_object = pygame.sprite.spritecollideany(self, ships)
             if hit_object:
                 now = pygame.time.get_ticks()
                 if now - self.last_hit > 400:
                     game.live -= 1
                     self.last_hit = now
+                    game.e_bullets.remove(self)
                 if game.live <= 0:
                     hit_object.kill()
         if self.direction == 2:
@@ -125,6 +123,11 @@ class Game:
         # Player related
         self.score = 0
         self.live = 3
+        self.lastShot = pygame.time.get_ticks()
+
+        #holds bullets
+        self.bullets = pygame.sprite.Group()
+        self.e_bullets = pygame.sprite.Group()
 
         # Enemy related
         self.eX = [0, 60, 120, 180, 240, 300, 360, 30, 100, 170, 240, 310, 60, 160, 260]
@@ -143,13 +146,9 @@ def main():
     # create event for enemy shooting
     g = Game()
     shoot_event = pygame.USEREVENT + 1
-    pygame.time.set_timer(shoot_event, 1000)
+    pygame.time.set_timer(shoot_event, 800)
     # Game Loop
     ships = pygame.sprite.Group()
-    bullets = pygame.sprite.Group()
-    #bullets.add(Bullet(100, 100, 2))
-    e_bullets = pygame.sprite.Group()
-    #e_bullets.add(Bullet(100, 100, 2))
     players = pygame.sprite.Group()
     p = Player(350, 480)
     players.add(p)
@@ -177,7 +176,7 @@ def main():
                 if num_ships != 0:
                     pick_enemy = random.randint(0, num_ships - 1)
                     bullet = Bullet(ships.sprites()[pick_enemy].rect.x, ships.sprites()[pick_enemy].rect.y, 1)
-                    e_bullets.add(bullet)
+                    g.e_bullets.add(bullet)
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
                     pressed_left = True
@@ -185,8 +184,11 @@ def main():
                     pressed_right = True
                 if event.key == pygame.K_SPACE:
                     if g.live > 0:
-                        bullet = Bullet(p.rect.x, p.rect.y, 0)
-                        bullets.add(bullet)
+                        now = pygame.time.get_ticks()
+                        if now - g.lastShot > 400:
+                            bullet = Bullet(p.rect.x, p.rect.y, 0)
+                            g.bullets.add(bullet)
+                            g.lastShot = now
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT:
                     pressed_left = False
@@ -205,16 +207,16 @@ def main():
 
         #update
         time_counter += 1
+        g.bullets.update(g, ships)
+        g.e_bullets.update(g, players)
+        ships.update(time_counter)
         players.update()
         overlay.update(g.score, g.live)
-        bullets.update(g, ships)
-        e_bullets.update(g, players)
-        ships.update(time_counter)
         #draw
         players.draw(g.scr)
         ships.draw(g.scr)
-        bullets.draw(g.scr)
-        e_bullets.draw(g.scr)
+        g.bullets.draw(g.scr)
+        g.e_bullets.draw(g.scr)
         overlay.draw(g.scr)
         #check for game over
         if g.live == 0 or not ships:

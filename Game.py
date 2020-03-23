@@ -230,7 +230,7 @@ def main():
                     pick_enemy = random.randint(0, num_ships - 1)
                     bullet = Bullet(g.ships.sprites()[pick_enemy].rect.x, g.ships.sprites()[pick_enemy].rect.y, 1)
                     bullet.y_change = random.randint(1, 15)
-                    if(bullet.y_change < 5):
+                    if(bullet.y_change <= 5):
                         bullet.image= bullet.images[2]
                     elif(bullet.y_change > 5 and bullet.y_change< 11):
                         bullet.image=bullet.images[1] 

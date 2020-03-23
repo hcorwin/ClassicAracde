@@ -100,6 +100,10 @@ class Bullet(pygame.sprite.Sprite):
                         game.ships.add(Enemy(game.eX[i], game.eY[i]))
                 if(game.score != 0 and game.score % 250 == 0): #every 250 points add extra life
                     game.live += 1        
+            if(self.rect.y < -10):
+                game.bullets.remove(self)
+
+
 
         if self.direction == 1:
           
@@ -113,6 +117,9 @@ class Bullet(pygame.sprite.Sprite):
                     game.e_bullets.remove(self)
                 if game.live <= 0:
                     hit_object.kill()
+            if(self.rect.y > 600):
+                game.e_bullets.remove(self)
+           
         if self.direction == 2:
             pass
 
